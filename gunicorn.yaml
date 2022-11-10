@@ -20,6 +20,7 @@
     rds_instance_info:
       db_instance_identifier: mydb
     register: new_database_info
+
   - name: "Create venv Python3.9"
     shell: |
       python3.9 -m venv /IaC_ansible --without-pip
@@ -27,12 +28,21 @@
       pip install --upgrade setuptools
       pip install -r /IaC_ansible/requirements.txt
     become: yes
+    register: result1
+  - debug:
+      msg: "{{result1}}"
   - name: "Config DB_HOST envvar"
     shell: |
       echo "DB_HOST={{ new_database_info['instances'][0]['endpoint']['address'] }}" >> /etc/environment
     become: yes
+    register: result2
+  - debug:
+      msg: "{{result2}}"
   - name: "Start Gunicorn"
     shell: |
       source /etc/environment
       nohup gunicorn --chdir /IaC_ansible/ --bind 0.0.0.0:8000 wsgi:app &
     become: yes
+    register: result3
+  - debug:
+      msg: "{{result3}}"
