@@ -1,7 +1,38 @@
 - hosts: localhost
+  vars:
+    ansible_python_interpreter: /usr/bin/python3.6
+  collections:
+  - community.aws
   tasks:
-  - name: "Insatll httpd server"
+  - name: "Insatll Repo"
     shell: |
-      apt update -y
-      apt install -y apache2
+      sudo add-apt-repository -y ppa:deadsnakes/ppa
+    become: yes
+  - name: "Insatll packages"
+    shell: |
+      apt install -y software-properties-common python3.9 python3.9-distutils
+    become: yes
+  - name: "Change Python Version"
+    shell: |
+      update-alternatives --install /usr/bin/python python /usr/bin/python3.9 3
+    become: yes
+  - name: Get information about an instance
+    rds_instance_info:
+      db_instance_identifier: mydb
+    register: new_database_info
+  - name: "Create venv Python3.9"
+    shell: |
+      python3.9 -m venv /IaC_ansible --without-pip
+      curl https://bootstrap.pypa.io/get-pip.py | python3.9
+      pip install --upgrade setuptools
+      pip install -r /IaC_ansible/requirements.txt
+    become: yes
+  - name: "Config DB_HOST envvar"
+    shell: |
+      echo "DB_HOST={{ new_database_info['instances'][0]['endpoint']['address'] }}" >> /etc/environment
+    become: yes
+  - name: "Start Gunicorn"
+    shell: |
+      source /etc/environment
+      nohup gunicorn --chdir /IaC_ansible --bind 0.0.0.0:8000 wsgi:app &
     become: yes
