@@ -42,6 +42,7 @@
     shell: |
       source /etc/environment
       nohup gunicorn --chdir /IaC_ansible/ --bind 0.0.0.0:8000 wsgi:app &
+      sleep 30
     become: yes
     register: result3
   - debug:
